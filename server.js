@@ -4444,6 +4444,35 @@ app.post('/tabs/:tabId/save-cookies', authMiddleware(), express.json({ limit: '1
   }
 });
 
+// Restore saved cookies for login persistence
+app.post('/tabs/:tabId/restore-cookies', authMiddleware(), express.json({ limit: '1mb' }), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const session = sessions.get(normalizeUserId(userId));
+    const found = session && findTab(session, req.params.tabId);
+    if (!found) return tabNotFoundResponse(res, req.params.tabId);
+
+    const cookieFile = os.homedir() + '/.camofox/' + userId + '-cookies.json';
+    if (!fs.existsSync(cookieFile)) {
+      return res.json({ ok: false, reason: 'no saved cookies', file: cookieFile });
+    }
+
+    const savedCookies = JSON.parse(fs.readFileSync(cookieFile, 'utf-8'));
+    if (savedCookies?.length > 0) {
+      await found.tabState.page.context().addCookies(savedCookies);
+      log('info', 'cookies restored', { userId, tabId: req.params.tabId, count: savedCookies.length, file: cookieFile });
+      res.json({ ok: true, count: savedCookies.length, file: cookieFile });
+    } else {
+      res.json({ ok: false, reason: 'empty cookies' });
+    }
+  } catch (err) {
+    log('error', 'restore-cookies failed', { error: err.message });
+    res.status(500).json({ error: safeError(err) });
+  }
+});
+
 // Structured extraction using JSON Schema with x-ref hints
 /**
  * @openapi
