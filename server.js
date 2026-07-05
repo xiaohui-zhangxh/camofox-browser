@@ -4421,6 +4421,29 @@ app.post('/tabs/:tabId/evaluate', authMiddleware(), express.json({ limit: '1mb' 
   }
 });
 
+// Save cookies for the current session tab's context
+app.post('/tabs/:tabId/save-cookies', authMiddleware(), express.json({ limit: '1mb' }), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+    const session = sessions.get(normalizeUserId(userId));
+    const found = session && findTab(session, req.params.tabId);
+    if (!found) return tabNotFoundResponse(res, req.params.tabId);
+
+    const cookies = await found.tabState.page.context().cookies();
+    const cookieDir = path.join(os.homedir(), '.camofox');
+    fs.mkdirSync(cookieDir, { recursive: true });
+    const cookieFile = path.join(cookieDir, `${userId}-cookies.json`);
+    fs.writeFileSync(cookieFile, JSON.stringify(cookies, null, 2));
+    log('info', 'cookies saved', { userId, tabId: req.params.tabId, count: cookies.length, file: cookieFile });
+    res.json({ ok: true, count: cookies.length, file: cookieFile });
+  } catch (err) {
+    log('error', 'save-cookies failed', { error: err.message });
+    res.status(500).json({ error: safeError(err) });
+  }
+});
+
 // Structured extraction using JSON Schema with x-ref hints
 /**
  * @openapi
