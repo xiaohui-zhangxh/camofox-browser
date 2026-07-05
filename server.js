@@ -4432,9 +4432,9 @@ app.post('/tabs/:tabId/save-cookies', authMiddleware(), express.json({ limit: '1
     if (!found) return tabNotFoundResponse(res, req.params.tabId);
 
     const cookies = await found.tabState.page.context().cookies();
-    const cookieDir = path.join(os.homedir(), '.camofox');
+    const cookieDir = os.homedir() + '/.camofox';
     fs.mkdirSync(cookieDir, { recursive: true });
-    const cookieFile = path.join(cookieDir, `${userId}-cookies.json`);
+    const cookieFile = cookieDir + '/' + userId + '-cookies.json';
     fs.writeFileSync(cookieFile, JSON.stringify(cookies, null, 2));
     log('info', 'cookies saved', { userId, tabId: req.params.tabId, count: cookies.length, file: cookieFile });
     res.json({ ok: true, count: cookies.length, file: cookieFile });
