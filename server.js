@@ -707,7 +707,7 @@ async function probeGoogleSearch(candidateBrowser) {
   let context = null;
   try {
     context = await candidateBrowser.newContext({
-      viewport: { width: 1280, height: 720 },
+      viewport: null,
       permissions: ['geolocation'],
     });
     const page = await context.newPage();
@@ -974,9 +974,14 @@ async function launchBrowserInstance() {
     });
 
     try {
+      let headless = useVirtualDisplay ? false : true;
+      // Allow env var override on any platform (e.g. macOS visible mode)
+      if (process.env.CAMOFOX_HEADLESS === 'false') {
+        headless = false;
+      }
       const options = await launchOptions({
         executable_path: externalCamoufox?.executablePath,
-        headless: useVirtualDisplay ? false : true,
+        headless,
         os: hostOS,
         humanize: true,
         enable_cache: true,
@@ -1177,7 +1182,7 @@ async function getSession(userId, { trace = false } = {}) {
       }
       const b = await ensureBrowser();
       const contextOptions = {
-        viewport: { width: 1280, height: 720 },
+        viewport: null,
         permissions: ['geolocation'],
       };
       // When geoip is active (proxy configured), camoufox auto-configures
