@@ -1191,6 +1191,12 @@ async function getSession(userId, { trace = false } = {}) {
         viewport: { ...CONFIG.windowSize },
         permissions: ['geolocation'],
       };
+      // Retina/HiDPI capture: same CSS layout, rasterized at Nx (CAMOFOX_DEVICE_SCALE_FACTOR).
+      // Screenshots then come out N x viewport, so annotated tutorial images stay sharp
+      // on retina displays instead of being upscaled (which looked blurry).
+      if (CONFIG.deviceScaleFactor > 1) {
+        contextOptions.deviceScaleFactor = CONFIG.deviceScaleFactor;
+      }
       // When geoip is active (proxy configured), camoufox auto-configures
       // locale/timezone/geolocation from the proxy IP. Without proxy, use defaults.
       if (!CONFIG.proxy.host) {
@@ -2387,6 +2393,10 @@ app.get('/health', (req, res) => {
     engine: 'camoufox',
     browserConnected: running,
     browserRunning: running,
+    // Capture geometry: tools use these to map CSS-pixel coordinates onto the PNG.
+    // deviceScaleFactor 2 -> screenshots are 2x the viewport (retina-crisp).
+    viewport: { ...CONFIG.windowSize },
+    deviceScaleFactor: CONFIG.deviceScaleFactor,
     activeTabs: getTotalTabCount(),
     activeSessions: sessions.size,
     consecutiveFailures: healthState.consecutiveNavFailures,
