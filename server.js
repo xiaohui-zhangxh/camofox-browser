@@ -384,6 +384,11 @@ const sessions = new Map();
 const SESSION_TIMEOUT_MS = CONFIG.sessionTimeoutMs;
 const MAX_SNAPSHOT_NODES = 500;
 const TAB_INACTIVITY_MS = CONFIG.tabInactivityMs;
+// In-flight grace: a session/group created for a tab whose context.newPage() has not
+// resolved yet has an EMPTY tabGroups/group. The reaper used to close it mid-flight,
+// making POST /tabs fail 503 "Target page, context or browser has been closed"
+// (~2.5% of creates measured on macOS). Anything touched this recently is not idle.
+const SESSION_GRACE_MS = 30_000;
 const MAX_SESSIONS = CONFIG.maxSessions;
 const MAX_TABS_PER_SESSION = CONFIG.maxTabsPerSession;
 const MAX_TABS_GLOBAL = CONFIG.maxTabsGlobal;
@@ -1239,6 +1244,7 @@ function getTabGroup(session, listItemId) {
   let group = session.tabGroups.get(listItemId);
   if (!group) {
     group = new Map();
+    group.createdAt = Date.now();  // used by the reaper's in-flight guard (see SESSION_GRACE_MS)
     session.tabGroups.set(listItemId, group);
   }
   return group;
@@ -5080,10 +5086,19 @@ if (FLY_MACHINE_ID) {
   }, 30_000);
 }
 
-// Per-tab inactivity reaper — close tabs idle for TAB_INACTIVITY_MS
-setInterval(() => {
+// Per-tab inactivity reaper — close tabs idle for TAB_INACTIVITY_MS.
+// Session closes are THROTTLED and SERIALIZED: bursting a dozen context closes in one
+// tick made the browser drop unrelated in-flight ops (measured: exactly one 503
+// "session_expired" per tick, on requests that had nothing to do with the reaped
+// sessions). Close a few per tick, one at a time, with a short breather.
+const REAP_MAX_SESSIONS_PER_TICK = 3;
+setInterval(async () => {
   const now = Date.now();
+  const toClose = [];
   for (const [userId, session] of sessions) {
+    // In-flight guard: a session whose tab is still being created (group not filled yet)
+    // must not be reaped -- see SESSION_GRACE_MS.
+    if (session._closing || now - (session.lastAccess || 0) < SESSION_GRACE_MS) continue;
     for (const [listItemId, group] of session.tabGroups) {
       for (const [tabId, tabState] of group) {
         if (!tabState._lastReaperCheck) {
@@ -5107,19 +5122,25 @@ setInterval(() => {
           tabState._lastReaperToolCalls = tabState.toolCalls;
         }
       }
-      if (group.size === 0) {
+      if (group.size === 0 && now - (group.createdAt || 0) >= SESSION_GRACE_MS) {
         session.tabGroups.delete(listItemId);
       }
     }
     // Clean up sessions with zero tabs remaining -- free browser context memory
-    if (session.tabGroups.size === 0) {
-      session._closing = true;
-      log('info', 'session empty after tab reaper, closing', { userId });
-      closeSession(userId, session, { reason: 'tab_reaper_empty_session', clearDownloads: true, clearLocks: true }).catch(() => {});
-      sessionsExpiredTotal.inc();
+    if (session.tabGroups.size === 0 && now - (session.lastAccess || 0) >= SESSION_GRACE_MS) {
+      toClose.push([userId, session]);
     }
   }
-  if (sessions.size === 0) scheduleBrowserIdleShutdown();
+  if (sessions.size === 0 && toClose.length === 0) scheduleBrowserIdleShutdown();
+  for (const [userId, session] of toClose.slice(0, REAP_MAX_SESSIONS_PER_TICK)) {
+    session._closing = true;
+    log('info', 'session empty after tab reaper, closing', { userId, queued: toClose.length });
+    sessionsExpiredTotal.inc();
+    try {
+      await closeSession(userId, session, { reason: 'tab_reaper_empty_session', clearDownloads: true, clearLocks: true });
+    } catch (_) { /* already reported by closeSession */ }
+    await new Promise((r) => setTimeout(r, 250));
+  }
 }, 60_000);
 
 // Orphan page reaper -- force-closes Playwright pages that survived a safePageClose
