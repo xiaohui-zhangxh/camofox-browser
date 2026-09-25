@@ -605,10 +605,27 @@ Reddit macros return JSON directly (no HTML parsing needed):
 
 ## Environment Variables
 
+For a locally visible browser with a fixed initial window size:
+
+```bash
+CAMOFOX_HEADLESS=false \
+CAMOFOX_WINDOW_SIZE=1280,800 \
+CAMOFOX_DEVICE_SCALE_FACTOR=2 \
+CAMOFOX_SHOWCURSOR=1 \
+npm start
+```
+
+`CAMOFOX_WINDOW_SIZE` controls Camoufox's outer window dimensions at launch and also seeds new page viewports. `CAMOFOX_DEVICE_SCALE_FACTOR=2` keeps the same CSS layout while rasterizing screenshots at Retina/HiDPI resolution; `4` provides high-resolution supersampling. Restart the server after changing either value; neither resizes an already-running browser window. A different page size can be applied to an existing page with `POST /tabs/:tabId/viewport`.
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `CAMOFOX_PORT` | Server port | `9377` |
 | `PORT` | Server port (fallback, for platforms like Fly.io, Railway) | `9377` |
+| `CAMOFOX_HEADLESS` | Set to `false` to show the browser window | `true` |
+| `CAMOFOX_WINDOW_SIZE` | Initial outer browser window size as `width,height` (100-4000 per dimension) | `1280,720` |
+| `CAMOFOX_DEVICE_SCALE_FACTOR` | Screenshot pixel density from `1` to `4`; use `2` for Retina/HiDPI or `4` for supersampling (CSS layout stays the same) | `1` |
+| `CAMOFOX_HUMANIZE` | Humanized input duration: `true`, a positive seconds cap such as `0.5`, or `false` | `true` |
+| `CAMOFOX_SHOWCURSOR` | Draw a synthetic cursor in the visible browser (`1` or `true`) | `false` |
 | `CAMOFOX_API_KEY` | Enable cookie import endpoint (disabled if unset) | - |
 | `CAMOFOX_ADMIN_KEY` | Required for `POST /stop` | - |
 | `CAMOFOX_ACCESS_KEY` | If set, all routes (except `/health`, cookie import, and `/stop`) require `Authorization: Bearer <key>`. Lets you safely expose the server beyond loopback. | - |
@@ -645,6 +662,16 @@ Reddit macros return JSON directly (no HTML parsing needed):
 | `ENABLE_VNC` | Enable VNC plugin for interactive browser access (`1`) | - |
 | `VNC_PASSWORD` | Password for VNC access (recommended in production) | - |
 | `NOVNC_PORT` | noVNC web UI port | `6080` |
+
+### AI client skill
+
+The project includes a portable skill for selecting launch profiles, configuring headed windows and HiDPI screenshots, and troubleshooting startup settings:
+
+```text
+skills/camofox-browser/SKILL.md
+```
+
+`opencode.jsonc` registers the root `skills` directory, so OpenCode discovers it as the `camofox-browser` skill. Other compatible clients can use the same `SKILL.md` as a reusable prompt/instruction file.
 
 ## Architecture
 

@@ -1,8 +1,8 @@
 /**
- * Smoke test: viewport + Camoufox window fingerprint on Playwright 1.59.1.
+ * Smoke test: page viewport + physical Camoufox outer window on Playwright 1.59.1.
  * Usage:
  *   node scripts/test-viewport-launch.mjs headless
- *   CAMOFOX_WINDOW_SIZE=375,667 node scripts/test-viewport-launch.mjs headful
+ *   CAMOFOX_WINDOW_SIZE=375,667 CAMOFOX_DEVICE_SCALE_FACTOR=2 node scripts/test-viewport-launch.mjs headful
  */
 import { launchOptions } from 'camoufox-js';
 import { firefox } from 'playwright-core';
@@ -16,9 +16,16 @@ function parseWindowSize() {
   return { width: w, height: h };
 }
 
+function parseDeviceScaleFactor() {
+  const raw = parseFloat(process.env.CAMOFOX_DEVICE_SCALE_FACTOR);
+  if (!Number.isFinite(raw) || raw <= 1) return 1;
+  return Math.min(4, raw);
+}
+
 async function run() {
   const windowSize = parseWindowSize();
-  console.log(`\n=== ${mode.toUpperCase()} window=${windowSize.width}x${windowSize.height} ===`);
+  const deviceScaleFactor = parseDeviceScaleFactor();
+  console.log(`\n=== ${mode.toUpperCase()} window=${windowSize.width}x${windowSize.height} dpr=${deviceScaleFactor} ===`);
   const options = await launchOptions({
     headless,
     os: process.platform === 'darwin' ? 'macos' : process.platform === 'win32' ? 'windows' : 'linux',
@@ -30,7 +37,7 @@ async function run() {
 
   const browser = await firefox.launch(options);
   try {
-    const context = await browser.newContext({ viewport: { ...windowSize } });
+    const context = await browser.newContext({ viewport: { ...windowSize }, deviceScaleFactor });
     const page = await context.newPage();
     await page.goto('about:blank');
     await page.waitForTimeout(400);
@@ -42,10 +49,16 @@ async function run() {
     }));
     console.log('page size:', size);
 
-    const ok =
-      Math.abs(size.innerWidth - windowSize.width) < 80 &&
-      Math.abs(size.outerHeight - windowSize.height) < 80;
-    console.log(ok ? 'PASS' : 'FAIL');
+    const outerWindowMatches =
+      Math.abs(size.outerWidth - windowSize.width) <= 2 &&
+      Math.abs(size.outerHeight - windowSize.height) <= 2;
+    const viewportFitsInside =
+      size.innerWidth > 0 &&
+      size.innerHeight > 0 &&
+      size.innerWidth <= size.outerWidth &&
+      size.innerHeight < size.outerHeight;
+    const ok = outerWindowMatches && viewportFitsInside;
+    console.log(ok ? 'PASS' : 'FAIL', { outerWindowMatches, viewportFitsInside });
     if (!ok) process.exitCode = 1;
 
     if (!headless) {

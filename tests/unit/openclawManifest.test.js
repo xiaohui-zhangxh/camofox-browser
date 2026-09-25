@@ -20,4 +20,16 @@ describe('OpenClaw manifest', () => {
     expect(manifest.tools).toEqual(runtimeTools);
     expect(packageTools).toEqual(runtimeTools);
   });
+
+  test('declares browser display environment variables', () => {
+    const manifest = JSON.parse(fs.readFileSync(new URL('../../openclaw.plugin.json', import.meta.url), 'utf8'));
+
+    expect(manifest.envVars).toMatchObject({
+      CAMOFOX_HEADLESS: { default: 'true' },
+      CAMOFOX_WINDOW_SIZE: { default: '1280,720' },
+      CAMOFOX_DEVICE_SCALE_FACTOR: { default: '1' },
+      CAMOFOX_HUMANIZE: { default: 'true' },
+      CAMOFOX_SHOWCURSOR: { default: 'false' },
+    });
+  });
 });

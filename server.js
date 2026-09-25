@@ -988,7 +988,13 @@ async function launchBrowserInstance() {
         executable_path: externalCamoufox?.executablePath,
         headless,
         os: hostOS,
-        humanize: true,
+        // CONFIG.humanize: true (uncapped, legacy) | seconds cap | false.
+        // Uncapped humanized moves take 1.4-2.8s each and blow the 3s click
+        // timeout below, so every click fell back to dispatchMouseSequence.
+        humanize: CONFIG.humanize,
+        // Only pass `config` when a cursor was explicitly requested -- the
+        // launch options stay identical to before when CAMOFOX_SHOWCURSOR is unset.
+        ...(CONFIG.showCursor ? { config: { showcursor: true } } : {}),
         enable_cache: true,
         proxy: launchProxy,
         geoip: !!launchProxy,

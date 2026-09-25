@@ -30,6 +30,36 @@
       "description": "External Camoufox executable to use instead of downloading the bundled browser. Compatibility aliases: CAMOUFOX_EXECUTABLE_PATH, CAMOFOX_EXECUTABLE_PATH.",
       "required": false,
       "sensitive": false
+    },
+    "CAMOFOX_HEADLESS": {
+      "description": "Set to 'false' to show the Camoufox browser window. Requires restart; window size is applied when the browser process launches.",
+      "required": false,
+      "sensitive": false,
+      "default": "true"
+    },
+    "CAMOFOX_WINDOW_SIZE": {
+      "description": "Initial browser outer-window size in 'width,height' pixels (100-4000 per dimension), for example '1280,800'.",
+      "required": false,
+      "sensitive": false,
+      "default": "1280,720"
+    },
+    "CAMOFOX_DEVICE_SCALE_FACTOR": {
+      "description": "Screenshot pixel density from 1 to 4. Use '2' on Retina/HiDPI displays or '4' for high-resolution supersampling; CSS layout dimensions stay unchanged.",
+      "required": false,
+      "sensitive": false,
+      "default": "1"
+    },
+    "CAMOFOX_HUMANIZE": {
+      "description": "Mouse/typing humanization: 'true' for no duration cap, a positive number such as '0.5' to cap each move in seconds, or 'false' to disable it.",
+      "required": false,
+      "sensitive": false,
+      "default": "true"
+    },
+    "CAMOFOX_SHOWCURSOR": {
+      "description": "Set to 'true' or '1' to draw a synthetic cursor in the visible browser.",
+      "required": false,
+      "sensitive": false,
+      "default": "false"
     }
   },
   "configSchema": {

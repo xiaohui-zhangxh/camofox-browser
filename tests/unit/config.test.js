@@ -38,6 +38,47 @@ describe('loadConfig', () => {
     expect(loadConfig().browserRssRestartThresholdMb).toBe(2048);
   });
 
+  test('parses and forwards visible-browser launch settings', () => {
+    process.env.CAMOFOX_HEADLESS = 'false';
+    process.env.CAMOFOX_WINDOW_SIZE = '1440,900';
+    process.env.CAMOFOX_DEVICE_SCALE_FACTOR = '2';
+    process.env.CAMOFOX_HUMANIZE = '0.5';
+    process.env.CAMOFOX_SHOWCURSOR = '1';
+
+    const config = loadConfig();
+
+    expect(config.camoufoxVisible).toBe(true);
+    expect(config.windowSize).toEqual({ width: 1440, height: 900 });
+    expect(config.deviceScaleFactor).toBe(2);
+    expect(config.humanize).toBe(0.5);
+    expect(config.showCursor).toBe(true);
+    expect(config.serverEnv).toMatchObject({
+      CAMOFOX_HEADLESS: 'false',
+      CAMOFOX_WINDOW_SIZE: '1440,900',
+      CAMOFOX_DEVICE_SCALE_FACTOR: '2',
+      CAMOFOX_HUMANIZE: '0.5',
+      CAMOFOX_SHOWCURSOR: '1',
+    });
+  });
+
+  test('falls back to the default launch window for invalid dimensions', () => {
+    process.env.CAMOFOX_WINDOW_SIZE = '80,900';
+    expect(loadConfig().windowSize).toEqual({ width: 1280, height: 720 });
+  });
+
+  test('supports up to 4x screenshot rasterization', () => {
+    process.env.CAMOFOX_DEVICE_SCALE_FACTOR = '4';
+    expect(loadConfig().deviceScaleFactor).toBe(4);
+
+    process.env.CAMOFOX_DEVICE_SCALE_FACTOR = '8';
+    expect(loadConfig().deviceScaleFactor).toBe(4);
+  });
+
+  test('supports disabling input humanization', () => {
+    process.env.CAMOFOX_HUMANIZE = 'false';
+    expect(loadConfig().humanize).toBe(false);
+  });
+
   test('preserves zero browser idle timeout and falls back for invalid values', () => {
     delete process.env.BROWSER_IDLE_TIMEOUT_MS;
     expect(loadConfig().browserIdleTimeoutMs).toBe(300000);
