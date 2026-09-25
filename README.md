@@ -67,6 +67,30 @@ This project wraps that engine in a REST API built for agents: accessibility sna
 - **Session Tracing** - opt-in per-session Playwright trace capture (screenshots + DOM snapshots + network) with API endpoints to list, fetch, and delete trace zips
 - **Telemetry** - automatic [anonymized crash/hang telemetry](lib/reporter.js#L28-L290) via GitHub Issues. Identifies which sites cause failures and common failure patterns. Private domains are HMAC-hashed, paths/params stripped, tokens/IPs redacted. Opt-out with `CAMOFOX_CRASH_REPORT_ENABLED=false`.
 
+## Fork-specific additions
+
+This fork adds a display and capture control layer on top of upstream Camofox Browser:
+
+- **Visible desktop browser** - use `CAMOFOX_INTERACTIVE=desktop` to open a local headed window
+- **Configurable window size** - set the outer browser window with `CAMOFOX_WINDOW_SIZE=1280,800`
+- **High-DPI screenshots** - set `CAMOFOX_DEVICE_SCALE_FACTOR=1..4` for 1x–4x rasterization without changing CSS layout
+- **Configurable humanized input** - use `CAMOFOX_HUMANIZE=true`, a duration such as `0.5`, or `false`
+- **Synthetic cursor** - show Camoufox's cursor with `CAMOFOX_SHOWCURSOR=1`
+- **Managed-client environment support** - expose the settings through OpenClaw and forward them to auto-started server subprocesses
+- **Portable AI-client skill** - load launch profiles and troubleshooting guidance from [`skills/camofox-browser/SKILL.md`](skills/camofox-browser/SKILL.md)
+- **Launch smoke test** - verify outer window size, inner viewport, and DPR with [`scripts/test-viewport-launch.mjs`](scripts/test-viewport-launch.mjs)
+
+Example high-resolution headed profile:
+
+```bash
+CAMOFOX_INTERACTIVE=desktop \
+CAMOFOX_WINDOW_SIZE=1280,800 \
+CAMOFOX_DEVICE_SCALE_FACTOR=3 \
+CAMOFOX_SHOWCURSOR=1 \
+CAMOFOX_HUMANIZE=0.5 \
+npm start
+```
+
 ## Optional Dependencies
 
 | Dependency | Purpose | Install |
