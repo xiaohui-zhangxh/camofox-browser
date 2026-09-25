@@ -93,8 +93,9 @@ describe('launch compatibility source contract', () => {
     expect(launchBrowser).toContain('humanize: CONFIG.humanize');
     expect(launchBrowser).toContain('window: [winW, winH]');
     expect(launchBrowser).toContain('...(CONFIG.showCursor ? { config: { showcursor: true } } : {})');
-    expect(sessionContextOptions).toContain('contextOptions.viewport = { ...CONFIG.windowSize }');
-    expect(sessionContextOptions).toContain('contextOptions.deviceScaleFactor = CONFIG.deviceScaleFactor');
+    expect(launchBrowser).toContain("'layout.css.devPixelsPerPx': String(CONFIG.deviceScaleFactor)");
+    expect(sessionContextOptions).toContain('viewport: null');
+    expect(sessionContextOptions).not.toContain('deviceScaleFactor');
   });
 
   test('falls back when optional GeoIP setup is unavailable', () => {

@@ -713,7 +713,7 @@ CAMOFOX_HUMANIZE=0.5 \
 npm start
 ```
 
-`CAMOFOX_WINDOW_SIZE` controls the outer native window. At the default DPR `1`, contexts use the native window viewport. When `CAMOFOX_DEVICE_SCALE_FACTOR > 1`, a fixed CSS viewport is enabled because Playwright does not allow a device scale factor with `viewport: null`; `CAMOFOX_DEVICE_SCALE_FACTOR=3` rasterizes screenshots at three physical pixels per CSS pixel. Values from `1` through `4` are supported. `CAMOFOX_HUMANIZE=0.5` caps Camoufox's synthetic mouse movement duration, while `CAMOFOX_SHOWCURSOR=1` displays the synthetic cursor. Restart the server after changing launch settings.
+`CAMOFOX_WINDOW_SIZE` controls the outer native window. `CAMOFOX_DEVICE_SCALE_FACTOR` is applied through Firefox's `layout.css.devPixelsPerPx` launch preference, so it works with the upstream `viewport: null` policy and rasterizes screenshots at the requested density without changing the CSS layout. For example, `CAMOFOX_DEVICE_SCALE_FACTOR=3` produces three physical pixels per CSS pixel; values from `1` through `4` are supported. `CAMOFOX_HUMANIZE=0.5` caps Camoufox's synthetic mouse movement duration, while `CAMOFOX_SHOWCURSOR=1` displays the synthetic cursor. Restart the server after changing launch settings.
 
 The reusable AI-client skill is located at `skills/camofox-browser/SKILL.md`. The project-level `opencode.jsonc` registers the root `skills` directory for OpenCode discovery.
 

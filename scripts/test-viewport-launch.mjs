@@ -32,12 +32,15 @@ async function run() {
     humanize: true,
     enable_cache: true,
     window: [windowSize.width, windowSize.height],
+    firefox_user_prefs: {
+      'layout.css.devPixelsPerPx': String(deviceScaleFactor),
+    },
   });
   console.log('launching...', { headless });
 
   const browser = await firefox.launch(options);
   try {
-    const context = await browser.newContext({ viewport: { ...windowSize }, deviceScaleFactor });
+    const context = await browser.newContext({ viewport: null });
     const page = await context.newPage();
     await page.goto('about:blank');
     await page.waitForTimeout(400);
@@ -46,6 +49,7 @@ async function run() {
       innerHeight: window.innerHeight,
       outerWidth: window.outerWidth,
       outerHeight: window.outerHeight,
+      dpr: window.devicePixelRatio,
     }));
     console.log('page size:', size);
 
@@ -57,8 +61,9 @@ async function run() {
       size.innerHeight > 0 &&
       size.innerWidth <= size.outerWidth &&
       size.innerHeight < size.outerHeight;
-    const ok = outerWindowMatches && viewportFitsInside;
-    console.log(ok ? 'PASS' : 'FAIL', { outerWindowMatches, viewportFitsInside });
+    const dprMatches = Math.abs(size.dpr - deviceScaleFactor) < 0.01;
+    const ok = outerWindowMatches && viewportFitsInside && dprMatches;
+    console.log(ok ? 'PASS' : 'FAIL', { outerWindowMatches, viewportFitsInside, dprMatches });
     if (!ok) process.exitCode = 1;
 
     if (!headless) {

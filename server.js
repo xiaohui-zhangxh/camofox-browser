@@ -1181,6 +1181,12 @@ async function launchBrowserInstance() {
         locale: launchLocale({ hasProxy: !!proxyPool, directIdentity: CONFIG.directIdentity }),
         virtual_display: vdDisplay,
         window: [winW, winH],
+        // Firefox applies this before pages render, so DPR 1..4 works with the
+        // upstream viewport:null policy and avoids Playwright's Firefox
+        // Browser.setDefaultViewport protocol incompatibility.
+        firefox_user_prefs: {
+          'layout.css.devPixelsPerPx': String(CONFIG.deviceScaleFactor),
+        },
         exclude_addons: CONFIG.disableDefaultAddons ? ['UBO'] : undefined,
       }, {
         attempt,
@@ -1400,13 +1406,6 @@ async function getSession(userId, { trace = false } = {}) {
           directIdentity: CONFIG.directIdentity,
         }),
       };
-      // Keep the upstream null viewport policy by default. Playwright rejects
-      // deviceScaleFactor together with viewport:null, so high-DPI capture
-      // opts into a fixed CSS viewport only when explicitly requested.
-      if (CONFIG.deviceScaleFactor > 1) {
-        contextOptions.viewport = { ...CONFIG.windowSize };
-        contextOptions.deviceScaleFactor = CONFIG.deviceScaleFactor;
-      }
       let sessionProxy = null;
       if (proxyPool?.canRotateSessions) {
         sessionProxy = proxyPool.getNext(`ctx-${key}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`);

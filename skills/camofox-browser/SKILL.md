@@ -59,7 +59,7 @@ DPR `4` produces four physical pixels per CSS pixel in each direction. It does n
 ## Important distinctions
 
 - `CAMOFOX_WINDOW_SIZE` controls the **outer native window**. Browser toolbars consume part of that height.
-- At the default DPR `1`, upstream contexts use `viewport: null` so the native window controls layout. When `CAMOFOX_DEVICE_SCALE_FACTOR > 1`, a fixed CSS viewport is enabled because Playwright does not allow DPR with a null viewport; a headed Camoufox window can still expose a smaller `window.innerHeight` than its outer height.
+- Upstream contexts keep `viewport: null`, so the native window controls layout. `CAMOFOX_DEVICE_SCALE_FACTOR` is applied through Firefox's `layout.css.devPixelsPerPx` launch preference, avoiding Playwright/Firefox protocol conflicts while preserving DPR 1–4 screenshot rasterization.
 - `deviceScaleFactor` changes screenshot pixels, not CSS layout. A CSS `390x784` page at DPR `3` produces approximately `1170x2352` PNG pixels.
 - Screenshot APIs capture page content, not the operating system's browser title bar or toolbar.
 - For custom screenshots, clipping to the measured `window.innerWidth`/`window.innerHeight` avoids transparent padding caused by an outer-window/content-height mismatch.
