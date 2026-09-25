@@ -860,7 +860,7 @@ function getTotalTabCount() {
 // Virtual display for WebGL support and anti-detection.
 // Xvfb gives Firefox a real X display with GLX, enabling software-rendered WebGL
 // via Mesa llvmpipe. Without this, WebGL returns "no context" -- a massive bot signal.
-const DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1280x720x24';
+const VIRTUAL_DISPLAY_RESOLUTION = `${CONFIG.windowSize.width}x${CONFIG.windowSize.height}x24`;
 
 class DefaultVirtualDisplay extends VirtualDisplay {
   get xvfb_args() {
@@ -868,7 +868,7 @@ class DefaultVirtualDisplay extends VirtualDisplay {
     const idx = args.indexOf('0');
     if (idx > 0 && args[idx - 1] === '-screen') {
       const patched = [...args];
-      patched[idx + 1] = DEFAULT_VIRTUAL_DISPLAY_RESOLUTION;
+      patched[idx + 1] = VIRTUAL_DISPLAY_RESOLUTION;
       return patched;
     }
     return args;
@@ -1168,16 +1168,19 @@ async function launchBrowserInstance() {
           excludeAddons: ['UBO'],
         });
       }
+      const { width: winW, height: winH } = CONFIG.windowSize;
       const options = await buildLaunchOptionsWithGeoipFallback({
         executable_path: externalCamoufox?.executablePath,
         headless: useVirtualDisplay ? false : !useDesktopWindow,
         os: hostOS,
-        humanize: true,
+        humanize: CONFIG.humanize,
+        ...(CONFIG.showCursor ? { config: { showcursor: true } } : {}),
         enable_cache: true,
         proxy: launchProxy,
         geoip: !!launchProxy,
         locale: launchLocale({ hasProxy: !!proxyPool, directIdentity: CONFIG.directIdentity }),
         virtual_display: vdDisplay,
+        window: [winW, winH],
         exclude_addons: CONFIG.disableDefaultAddons ? ['UBO'] : undefined,
       }, {
         attempt,
@@ -1397,6 +1400,13 @@ async function getSession(userId, { trace = false } = {}) {
           directIdentity: CONFIG.directIdentity,
         }),
       };
+      // Keep the upstream null viewport policy by default. Playwright rejects
+      // deviceScaleFactor together with viewport:null, so high-DPI capture
+      // opts into a fixed CSS viewport only when explicitly requested.
+      if (CONFIG.deviceScaleFactor > 1) {
+        contextOptions.viewport = { ...CONFIG.windowSize };
+        contextOptions.deviceScaleFactor = CONFIG.deviceScaleFactor;
+      }
       let sessionProxy = null;
       if (proxyPool?.canRotateSessions) {
         sessionProxy = proxyPool.getNext(`ctx-${key}-${crypto.randomUUID().replace(/-/g, '').slice(0, 8)}`);
@@ -2653,6 +2663,15 @@ async function refreshTabRefs(tabState, options = {}) {
  *                   type: boolean
  *                 browserRunning:
  *                   type: boolean
+ *                 viewport:
+ *                   type: object
+ *                   properties:
+ *                     width:
+ *                       type: integer
+ *                     height:
+ *                       type: integer
+ *                 deviceScaleFactor:
+ *                   type: number
  *                 activeTabs:
  *                   type: integer
  *                 activeSessions:
@@ -2702,6 +2721,8 @@ app.get('/health', (req, res) => {
     engine: 'camoufox',
     browserConnected: running,
     browserRunning: running,
+    viewport: { ...CONFIG.windowSize },
+    deviceScaleFactor: CONFIG.deviceScaleFactor,
     activeTabs: getTotalTabCount(),
     activeSessions: sessions.size,
     consecutiveFailures: Array.from(userNavHealth.values())

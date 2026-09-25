@@ -20,7 +20,7 @@ describe('launch compatibility source contract', () => {
 
   test('sizes the default virtual display used with null context viewports', () => {
     const defaultVirtualDisplay = sourceBetween(
-      'const DEFAULT_VIRTUAL_DISPLAY_RESOLUTION',
+      'const VIRTUAL_DISPLAY_RESOLUTION',
       'let virtualDisplay = null;'
     );
     const pluginContext = sourceBetween(
@@ -28,9 +28,9 @@ describe('launch compatibility source contract', () => {
       'const loadedPlugins = await loadPlugins'
     );
 
-    expect(defaultVirtualDisplay).toContain("DEFAULT_VIRTUAL_DISPLAY_RESOLUTION = '1280x720x24'");
+    expect(defaultVirtualDisplay).toContain('const VIRTUAL_DISPLAY_RESOLUTION = `${CONFIG.windowSize.width}x${CONFIG.windowSize.height}x24`');
     expect(defaultVirtualDisplay).toContain('class DefaultVirtualDisplay extends VirtualDisplay');
-    expect(defaultVirtualDisplay).toContain('patched[idx + 1] = DEFAULT_VIRTUAL_DISPLAY_RESOLUTION');
+    expect(defaultVirtualDisplay).toContain('patched[idx + 1] = VIRTUAL_DISPLAY_RESOLUTION');
     expect(pluginContext).toContain('registerVirtualDisplayProvider: (pluginName, factory) => virtualDisplayRegistry.register(pluginName, factory)');
   });
 
@@ -78,6 +78,23 @@ describe('launch compatibility source contract', () => {
     expect(launch).toContain("const useDesktopWindow = CONFIG.interactiveMode === 'desktop'");
     expect(launch).toContain("if (os.platform() === 'linux' && !useDesktopWindow)");
     expect(launch).toContain('headless: useVirtualDisplay ? false : !useDesktopWindow');
+  });
+
+  test('passes configured launch display, humanization, and cursor options to Camoufox', () => {
+    const launchBrowser = sourceBetween(
+      'async function launchBrowserInstance()',
+      'async function ensureBrowser()'
+    );
+    const sessionContextOptions = sourceBetween(
+      'const contextOptions = {',
+      'let sessionProxy = null;'
+    );
+
+    expect(launchBrowser).toContain('humanize: CONFIG.humanize');
+    expect(launchBrowser).toContain('window: [winW, winH]');
+    expect(launchBrowser).toContain('...(CONFIG.showCursor ? { config: { showcursor: true } } : {})');
+    expect(sessionContextOptions).toContain('contextOptions.viewport = { ...CONFIG.windowSize }');
+    expect(sessionContextOptions).toContain('contextOptions.deviceScaleFactor = CONFIG.deviceScaleFactor');
   });
 
   test('falls back when optional GeoIP setup is unavailable', () => {

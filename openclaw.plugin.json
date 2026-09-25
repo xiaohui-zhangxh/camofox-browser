@@ -3,6 +3,38 @@
   "name": "Camofox Browser",
   "description": "Anti-detection browser automation for AI agents using Camoufox (Firefox-based)",
   "version": "1.17.0",
+  "envVars": {
+    "CAMOFOX_INTERACTIVE": {
+      "description": "Interactive browser mode. Use 'desktop' for a visible local window; 'off' keeps normal headless behavior.",
+      "required": false,
+      "sensitive": false,
+      "default": "off"
+    },
+    "CAMOFOX_WINDOW_SIZE": {
+      "description": "Initial outer browser window size as 'width,height' pixels (100-4000 per dimension).",
+      "required": false,
+      "sensitive": false,
+      "default": "1280,720"
+    },
+    "CAMOFOX_DEVICE_SCALE_FACTOR": {
+      "description": "Screenshot pixel density from 1 to 4. CSS layout dimensions stay unchanged.",
+      "required": false,
+      "sensitive": false,
+      "default": "1"
+    },
+    "CAMOFOX_HUMANIZE": {
+      "description": "Mouse/typing humanization: true, a positive seconds cap such as 0.5, or false.",
+      "required": false,
+      "sensitive": false,
+      "default": "true"
+    },
+    "CAMOFOX_SHOWCURSOR": {
+      "description": "Set to true or 1 to draw a synthetic cursor in the visible browser.",
+      "required": false,
+      "sensitive": false,
+      "default": "false"
+    }
+  },
   "configSchema": {
     "type": "object",
     "properties": {

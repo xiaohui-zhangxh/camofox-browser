@@ -182,4 +182,40 @@ describe('loadConfig', () => {
     expect(config.serverEnv.CAMOFOX_DISABLE_DEFAULT_ADDONS).toBe('true');
   });
 
+  test('parses and forwards display, capture, and input launch settings', () => {
+    process.env.CAMOFOX_INTERACTIVE = 'desktop';
+    process.env.CAMOFOX_WINDOW_SIZE = '1440,900';
+    process.env.CAMOFOX_DEVICE_SCALE_FACTOR = '4';
+    process.env.CAMOFOX_HUMANIZE = '0.5';
+    process.env.CAMOFOX_SHOWCURSOR = '1';
+
+    const config = loadConfig();
+
+    expect(config.interactiveMode).toBe('desktop');
+    expect(config.windowSize).toEqual({ width: 1440, height: 900 });
+    expect(config.deviceScaleFactor).toBe(4);
+    expect(config.humanize).toBe(0.5);
+    expect(config.showCursor).toBe(true);
+    expect(config.serverEnv).toMatchObject({
+      CAMOFOX_INTERACTIVE: 'desktop',
+      CAMOFOX_WINDOW_SIZE: '1440,900',
+      CAMOFOX_DEVICE_SCALE_FACTOR: '4',
+      CAMOFOX_HUMANIZE: '0.5',
+      CAMOFOX_SHOWCURSOR: '1',
+    });
+  });
+
+  test('falls back for invalid window dimensions and clamps DPR to 4', () => {
+    process.env.CAMOFOX_WINDOW_SIZE = '80,900';
+    process.env.CAMOFOX_DEVICE_SCALE_FACTOR = '8';
+    const config = loadConfig();
+    expect(config.windowSize).toEqual({ width: 1280, height: 720 });
+    expect(config.deviceScaleFactor).toBe(4);
+  });
+
+  test('supports disabling input humanization', () => {
+    process.env.CAMOFOX_HUMANIZE = 'false';
+    expect(loadConfig().humanize).toBe(false);
+  });
+
 });

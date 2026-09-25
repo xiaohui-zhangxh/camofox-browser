@@ -39,4 +39,16 @@ describe('OpenClaw manifest', () => {
     expect(manifest).not.toHaveProperty('tools');
     expect(packageTools).toEqual(TOOL_NAMES);
   });
+
+  test('declares display and capture environment variables', () => {
+    const manifest = readJson('openclaw.plugin.json');
+
+    expect(manifest.envVars).toMatchObject({
+      CAMOFOX_INTERACTIVE: { default: 'off' },
+      CAMOFOX_WINDOW_SIZE: { default: '1280,720' },
+      CAMOFOX_DEVICE_SCALE_FACTOR: { default: '1' },
+      CAMOFOX_HUMANIZE: { default: 'true' },
+      CAMOFOX_SHOWCURSOR: { default: 'false' },
+    });
+  });
 });

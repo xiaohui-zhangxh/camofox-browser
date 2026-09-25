@@ -235,6 +235,20 @@
                     "browserRunning": {
                       "type": "boolean"
                     },
+                    "viewport": {
+                      "type": "object",
+                      "properties": {
+                        "width": {
+                          "type": "integer"
+                        },
+                        "height": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "deviceScaleFactor": {
+                      "type": "number"
+                    },
                     "activeTabs": {
                       "type": "integer"
                     },

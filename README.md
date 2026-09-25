@@ -655,6 +655,10 @@ Browser behavior can be tuned in `camofox.config.json`:
 | `SESSION_TIMEOUT_MS` | Session inactivity timeout (0 = never) | `600000` (10min) |
 | `BROWSER_IDLE_TIMEOUT_MS` | Kill browser when idle (0 = never) | `300000` (5min) |
 | `CAMOFOX_INTERACTIVE` | Interactive browser mode: `desktop` opens a real local Camoufox window; `off` keeps normal headless behavior | `off` |
+| `CAMOFOX_WINDOW_SIZE` | Initial outer browser window size as `width,height` (100-4000 per dimension) | `1280,720` |
+| `CAMOFOX_DEVICE_SCALE_FACTOR` | Screenshot pixel density from `1` to `4`; CSS layout stays unchanged | `1` |
+| `CAMOFOX_HUMANIZE` | Humanized input duration: `true`, a positive seconds cap such as `0.5`, or `false` | `true` |
+| `CAMOFOX_SHOWCURSOR` | Draw a synthetic cursor in the visible browser (`1` or `true`) | `false` |
 | `HANDLER_TIMEOUT_MS` | Max time for any handler | `30000` (30s) |
 | `MAX_CONCURRENT_PER_USER` | Concurrent request cap per user | `3` |
 | `MAX_OLD_SPACE_SIZE` | Node.js V8 heap limit (MB) | `128` |
@@ -695,6 +699,23 @@ Or set the same preference in `camofox.config.json` and restart the server:
 ```
 
 The environment variable overrides the file setting. Set `CAMOFOX_INTERACTIVE=off` to return to normal headless behavior. This mode is intended for a person using the same machine; it does not expose a remote browser-control service.
+
+### Launch display and capture profiles
+
+For a visible, high-resolution launch profile:
+
+```bash
+CAMOFOX_INTERACTIVE=desktop \
+CAMOFOX_WINDOW_SIZE=1280,800 \
+CAMOFOX_DEVICE_SCALE_FACTOR=3 \
+CAMOFOX_SHOWCURSOR=1 \
+CAMOFOX_HUMANIZE=0.5 \
+npm start
+```
+
+`CAMOFOX_WINDOW_SIZE` controls the outer native window. At the default DPR `1`, contexts use the native window viewport. When `CAMOFOX_DEVICE_SCALE_FACTOR > 1`, a fixed CSS viewport is enabled because Playwright does not allow a device scale factor with `viewport: null`; `CAMOFOX_DEVICE_SCALE_FACTOR=3` rasterizes screenshots at three physical pixels per CSS pixel. Values from `1` through `4` are supported. `CAMOFOX_HUMANIZE=0.5` caps Camoufox's synthetic mouse movement duration, while `CAMOFOX_SHOWCURSOR=1` displays the synthetic cursor. Restart the server after changing launch settings.
+
+The reusable AI-client skill is located at `skills/camofox-browser/SKILL.md`. The project-level `opencode.jsonc` registers the root `skills` directory for OpenCode discovery.
 
 ## Architecture
 
